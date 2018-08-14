@@ -1,3 +1,74 @@
+1.5.4 (2018-06-27)
+==================
+
+- fix pytest-dev/pytest#3451: don't make assumptions about fs case sensitivity
+  in ``make_numbered_dir``.
+
+1.5.3
+=====
+
+- fix #179: ensure we can support 'from py.error import ...'
+
+1.5.2
+=====
+
+- fix #169, #170: error importing py.log on Windows: no module named ``syslog``.
+
+1.5.1
+=====
+
+- fix #167 - prevent pip from installing py in unsupported Python versions.
+
+1.5.0
+=====
+
+NOTE: **this release has been removed from PyPI** due to missing package
+metadata which caused a number of problems to py26 and py33 users.
+This issue was fixed in the 1.5.1 release.
+
+- python 2.6 and 3.3 are no longer supported
+- deprecate py.std and remove all internal uses
+- fix #73 turn py.error into an actual module
+- path join to / no longer produces leading double slashes
+- fix #82 - remove unsupportable aliases
+- fix python37 compatibility of path.sysfind on windows by correctly replacing vars
+- turn iniconfig and apipkg into vendored packages and ease de-vendoring for distributions
+- fix #68 remove invalid py.test.ensuretemp references
+- fix #25 - deprecate path.listdir(sort=callable)
+- add ``TerminalWriter.chars_on_current_line`` read-only property that tracks how many characters
+  have been written to the current line.
+
+1.4.34
+====================================================================
+
+- fix issue119 / pytest issue708 where tmpdir may fail to make numbered directories
+  when the filesystem is case-insensitive.
+
+1.4.33
+====================================================================
+
+- avoid imports in calls to py.path.local().fnmatch(). Thanks Andreas Pelme for
+  the PR.
+
+- fix issue106: Naive unicode encoding when calling fspath() in python2. Thanks Tiago Nobrega for the PR.
+
+- fix issue110: unittest.TestCase.assertWarns fails with py imported.
+
+1.4.32
+====================================================================
+
+- fix issue70: added ability to copy all stat info in py.path.local.copy.
+
+- make TerminalWriter.fullwidth a property.  This results in the correct
+  value when the terminal gets resized.
+
+- update supported html tags to include recent additions.
+  Thanks Denis Afonso for the PR.
+
+- Remove internal code in ``Source.compile`` meant to support earlier Python 3 versions that produced the side effect
+  of leaving ``None`` in ``sys.modules`` when called (see pytest-dev/pytest#2103).
+  Thanks Bruno Oliveira for the PR.
+
 1.4.31
 ==================================================
 

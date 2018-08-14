@@ -366,7 +366,7 @@ class TestStdCaptureFD(TestStdCapture):
     def test_callcapture(self):
         def func(x, y):
             print (x)
-            py.std.sys.stderr.write(str(y))
+            sys.stderr.write(str(y))
             return 42
 
         res, out, err = py.io.StdCaptureFD.call(func, 3, y=4)
@@ -460,7 +460,7 @@ def test_callcapture_nofd():
     assert err.startswith("4")
 
 @needsdup
-@py.test.mark.multi(use=[True, False])
+@py.test.mark.parametrize('use', [True, False])
 def test_fdcapture_tmpfile_remains_the_same(tmpfile, use):
     if not use:
         tmpfile = True
@@ -472,7 +472,7 @@ def test_fdcapture_tmpfile_remains_the_same(tmpfile, use):
     capfile2 = cap.err.tmpfile
     assert capfile2 == capfile
 
-@py.test.mark.multi(method=['StdCapture', 'StdCaptureFD'])
+@py.test.mark.parametrize('method', ['StdCapture', 'StdCaptureFD'])
 def test_capturing_and_logging_fundamentals(testdir, method):
     if method == "StdCaptureFD" and not hasattr(os, 'dup'):
         py.test.skip("need os.dup")

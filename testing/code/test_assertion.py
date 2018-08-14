@@ -1,7 +1,9 @@
 import pytest, py
+import re
 
 def exvalue():
-    return py.std.sys.exc_info()[1]
+    import sys
+    return sys.exc_info()[1]
 
 def f():
     return 2
@@ -23,13 +25,7 @@ def test_assert_within_finally():
             i = 42
     """)
     s = excinfo.exconly()
-    assert py.std.re.search("division.+by zero", s) is not None
-
-    #def g():
-    #    A.f()
-    #excinfo = getexcinfo(TypeError, g)
-    #msg = getmsg(excinfo)
-    #assert msg.find("must be called with A") != -1
+    assert re.search("ZeroDivisionError:.*division", s) is not None
 
 
 def test_assert_multiline_1():
@@ -67,7 +63,6 @@ def test_is():
         assert s.startswith("assert 1 is 2")
 
 
-@py.test.mark.skipif("sys.version_info < (2,6)")
 def test_attrib():
     class Foo(object):
         b = 1
@@ -79,7 +74,6 @@ def test_attrib():
         s = str(e)
         assert s.startswith("assert 1 == 2")
 
-@py.test.mark.skipif("sys.version_info < (2,6)")
 def test_attrib_inst():
     class Foo(object):
         b = 1
@@ -108,7 +102,7 @@ def test_assert_keyword_arg():
         assert f(x=5)
     except AssertionError:
         e = exvalue()
-        assert "x=5" in e.msg
+        assert "x=5" in str(e)
 
 # These tests should both fail, but should fail nicely...
 class WeirdRepr:
@@ -121,8 +115,8 @@ def bug_test_assert_repr():
         assert v == 1
     except AssertionError:
         e = exvalue()
-        assert e.msg.find('WeirdRepr') != -1
-        assert e.msg.find('second line') != -1
+        assert str(e).find('WeirdRepr') != -1
+        assert str(e).find('second line') != -1
         assert 0
 
 def test_assert_non_string():
@@ -130,7 +124,7 @@ def test_assert_non_string():
         assert 0, ['list']
     except AssertionError:
         e = exvalue()
-        assert e.msg.find("list") != -1
+        assert str(e).find("list") != -1
 
 def test_assert_implicit_multiline():
     try:
@@ -139,9 +133,12 @@ def test_assert_implicit_multiline():
            2, 3]
     except AssertionError:
         e = exvalue()
-        assert e.msg.find('assert [1, 2, 3] !=') != -1
+        assert str(e).find('assert [1, 2, 3] !=') != -1
 
-
+@py.test.mark.xfail(py.test.__version__[0] != "2",
+                    reason="broken on modern pytest",
+                    run=False
+)
 def test_assert_with_brokenrepr_arg():
     class BrokenRepr:
         def __repr__(self): 0 / 0
@@ -154,14 +151,14 @@ def test_multiple_statements_per_line():
         a = 1; assert a == 2
     except AssertionError:
         e = exvalue()
-        assert "assert 1 == 2" in e.msg
+        assert "assert 1 == 2" in str(e)
 
 def test_power():
     try:
         assert 2**3 == 7
     except AssertionError:
         e = exvalue()
-        assert "assert (2 ** 3) == 7" in e.msg
+        assert "assert (2 ** 3) == 7" in str(e)
 
 
 class TestView:
@@ -228,7 +225,6 @@ def test_underscore_api():
     py.code._reinterpret_old # used by pypy
     py.code._reinterpret
 
-@py.test.mark.skipif("sys.version_info < (2,6)")
 def test_assert_customizable_reprcompare(monkeypatch):
     util = pytest.importorskip("_pytest.assertion.util")
     monkeypatch.setattr(util, '_reprcompare', lambda *args: 'hello')
@@ -277,16 +273,17 @@ def test_assert_raise_alias(testdir):
         "*1 failed*",
     ])
 
-
-@pytest.mark.skipif("sys.version_info < (2,5)")
+@py.test.mark.xfail(py.test.__version__[0] != "2",
+                    reason="broken on modern pytest",
+                    run=False)
 def test_assert_raise_subclass():
     class SomeEx(AssertionError):
         def __init__(self, *args):
             super(SomeEx, self).__init__()
     try:
         raise SomeEx("hello")
-    except AssertionError:
-        s = str(exvalue())
+    except AssertionError as e:
+        s = str(e)
         assert 're-run' not in s
         assert 'could not determine' in s
 

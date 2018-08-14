@@ -1,6 +1,8 @@
 import py
 import sys
 
+import pytest
+
 class CommonFSTests(object):
     def test_constructor_equality(self, path1):
         p = path1.__class__(path1)
@@ -186,9 +188,12 @@ class CommonFSTests(object):
         assert "sampledir" in l
         assert not path1.sep.join(["sampledir", "otherfile"]) in l
 
-    def test_visit_filterfunc_is_string(self, path1):
+    @pytest.mark.parametrize('fil', ['*dir', u'*dir',
+                             pytest.mark.skip("sys.version_info <"
+                                              " (3,6)")(b'*dir')])
+    def test_visit_filterfunc_is_string(self, path1, fil):
         l = []
-        for i in path1.visit('*dir'):
+        for i in path1.visit(fil):
             l.append(i.relto(path1))
         assert len(l), 2
         assert "sampledir" in l
@@ -429,6 +434,26 @@ class CommonFSTests(object):
         assert dest.join('otherfile').check(file=1)
         assert not source.join('sampledir').check()
 
+    def test_fspath_protocol_match_strpath(self, path1):
+        assert path1.__fspath__() == path1.strpath
+
+    def test_fspath_func_match_strpath(self, path1):
+        try:
+            from os import fspath
+        except ImportError:
+            from py._path.common import fspath
+        assert fspath(path1) == path1.strpath
+
+    @py.test.mark.skip("sys.version_info < (3,6)")
+    def test_fspath_open(self, path1):
+        f = path1.join('opentestfile')
+        open(f)
+
+    @py.test.mark.skip("sys.version_info < (3,6)")
+    def test_fspath_fsencode(self, path1):
+        from os import fsencode
+        assert fsencode(path1) == fsencode(path1.strpath)
+
 def setuptestfs(path):
     if path.join('samplefile').check():
         return
@@ -452,10 +477,7 @@ def setuptestfs(path):
     otherdir.ensure('__init__.py')
 
     module_a = otherdir.ensure('a.py')
-    if sys.version_info >= (2,6):
-        module_a.write('from .b import stuff as result\n')
-    else:
-        module_a.write('from b import stuff as result\n')
+    module_a.write('from .b import stuff as result\n')
     module_b = otherdir.ensure('b.py')
     module_b.write('stuff="got it"\n')
     module_c = otherdir.ensure('c.py')

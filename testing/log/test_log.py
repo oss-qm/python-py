@@ -1,9 +1,9 @@
 import py
-import sys
 
 from py._log.log import default_keywordmapper
 
 callcapture = py.io.StdCapture.call
+
 
 def setup_module(mod):
     mod._oldstate = default_keywordmapper.getstate()
@@ -13,6 +13,7 @@ def teardown_module(mod):
 
 class TestLogProducer:
     def setup_method(self, meth):
+        from py._log.log import default_keywordmapper
         default_keywordmapper.setstate(_oldstate)
 
     def test_getstate_setstate(self):

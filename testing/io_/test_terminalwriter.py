@@ -73,7 +73,7 @@ def test_terminalwriter_dumb_term_no_markup(monkeypatch):
         monkeypatch.undo()
 
 def test_terminalwriter_file_unicode(tmpdir):
-    f = py.std.codecs.open(str(tmpdir.join("xyz")), "wb", "utf8")
+    f = codecs.open(str(tmpdir.join("xyz")), "wb", "utf8")
     tw = py.io.TerminalWriter(file=f)
     assert tw.encoding == "utf8"
 
@@ -89,7 +89,7 @@ def test_unicode_encoding():
 def test_unicode_on_file_with_ascii_encoding(tmpdir, monkeypatch, encoding):
     msg = py.builtin._totext('hell\xf6', "latin1")
     #pytest.raises(UnicodeEncodeError, lambda: bytes(msg))
-    f = py.std.codecs.open(str(tmpdir.join("x")), "w", encoding)
+    f = codecs.open(str(tmpdir.join("x")), "w", encoding)
     tw = py.io.TerminalWriter(f)
     tw.line(msg)
     f.close()
@@ -224,6 +224,27 @@ def test_terminal_with_callable_write_and_flush():
     tw = py.io.TerminalWriter(fil())
     tw.line("hello")
     assert l == set(["2"])
+
+
+def test_chars_on_current_line():
+    tw = py.io.TerminalWriter(stringio=True)
+
+    written = []
+
+    def write_and_check(s, expected):
+        tw.write(s, bold=True)
+        written.append(s)
+        assert tw.chars_on_current_line == expected
+        assert tw.stringio.getvalue() == ''.join(written)
+
+    write_and_check('foo', 3)
+    write_and_check('bar', 6)
+    write_and_check('\n', 0)
+    write_and_check('\n', 0)
+    write_and_check('\n\n\n', 0)
+    write_and_check('\nfoo', 3)
+    write_and_check('\nfbar\nhello', 5)
+    write_and_check('10', 7)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="win32 has no native ansi")

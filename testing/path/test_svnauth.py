@@ -1,10 +1,10 @@
 import py
-import svntestbase
 from py.path import SvnAuth
 import time
 import sys
 
 svnbin = py.path.local.sysfind('svn')
+
 
 def make_repo_auth(repo, userdata):
     """ write config to repo
@@ -277,7 +277,7 @@ class Setup:
         if sys.platform == 'win32':
             repodir = '/' + str(repodir).replace('\\', '/')
         self.repo = py.path.svnurl("file://%s" % repodir)
-        if py.std.sys.platform == 'win32':
+        if sys.platform == 'win32':
             # remove trailing slash...
             repodir = repodir[1:]
         self.repopath = py.path.local(repodir)
@@ -322,6 +322,12 @@ class TestSvnWCAuthFunctional:
         assert log[0].msg == 'added foo.txt'
 
     def test_switch(self, setup):
+        import pytest
+        try:
+            import xdist
+            pytest.skip('#160: fails under xdist')
+        except ImportError:
+            pass
         wc = py.path.svnwc(setup.temppath, auth=setup.auth)
         svnurl = 'svn://localhost:%s/%s' % (setup.port, setup.repopath.basename)
         wc.checkout(svnurl)

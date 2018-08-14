@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import py
+import pytest
+import sys
+from test_source import astonly
+
 from py._code.code import FormattedExcinfo, ReprExceptionInfo
 queue = py.builtin._tryimport('queue', 'Queue')
 
 failsonjython = py.test.mark.xfail("sys.platform.startswith('java')")
-from test_source import astonly
 
 try:
     import importlib
@@ -14,20 +17,31 @@ except ImportError:
 else:
     invalidate_import_caches = getattr(importlib, "invalidate_caches", None)
 
-import pytest
+
 pytest_version_info = tuple(map(int, pytest.__version__.split(".")[:3]))
+
+broken_on_modern_pytest = pytest.mark.xfail(
+    pytest_version_info[0] != 2,
+    reason="this test hasn't been fixed after moving py.code into pytest",
+    run=False
+    )
+
 
 class TWMock:
     def __init__(self):
         self.lines = []
+
     def sep(self, sep, line=None):
         self.lines.append((sep, line))
+
     def line(self, line, **kw):
         self.lines.append(line)
+
     def markup(self, text, **kw):
         return text
 
     fullwidth = 80
+
 
 def test_excinfo_simple():
     try:
@@ -36,18 +50,22 @@ def test_excinfo_simple():
         info = py.code.ExceptionInfo()
     assert info.type == ValueError
 
+
 def test_excinfo_getstatement():
     def g():
         raise ValueError
+
     def f():
         g()
     try:
         f()
     except ValueError:
         excinfo = py.code.ExceptionInfo()
-    linenumbers = [py.code.getrawcode(f).co_firstlineno-1+3,
-                   py.code.getrawcode(f).co_firstlineno-1+1,
-                   py.code.getrawcode(g).co_firstlineno-1+1,]
+    linenumbers = [
+        py.code.getrawcode(f).co_firstlineno-1+3,
+        py.code.getrawcode(f).co_firstlineno-1+1,
+        py.code.getrawcode(g).co_firstlineno-1+1,
+    ]
     l = list(excinfo.traceback)
     foundlinenumbers = [x.lineno for x in l]
     assert foundlinenumbers == linenumbers
@@ -92,7 +110,7 @@ class TestTraceback_f_g_h:
 
     def test_traceback_entry_getsource(self):
         tb = self.excinfo.traceback
-        s = str(tb[-1].getsource() )
+        s = str(tb[-1].getsource())
         assert s.startswith("def f():")
         assert s.endswith("raise ValueError")
 
@@ -164,10 +182,12 @@ class TestTraceback_f_g_h:
     def test_traceback_no_recursion_index(self):
         def do_stuff():
             raise RuntimeError
+
         def reraise_me():
             import sys
             exc, val, tb = sys.exc_info()
             py.builtin._reraise(exc, val, tb)
+
         def f(n):
             try:
                 do_stuff()
@@ -179,7 +199,7 @@ class TestTraceback_f_g_h:
         assert recindex is None
 
     def test_traceback_messy_recursion(self):
-        #XXX: simplified locally testable version
+        # XXX: simplified locally testable version
         decorator = py.test.importorskip('decorator').decorator
 
         def log(f, *k, **kw):
@@ -195,17 +215,18 @@ class TestTraceback_f_g_h:
         excinfo = py.test.raises(ValueError, fail)
         assert excinfo.traceback.recursionindex() is None
 
-
-
     def test_traceback_getcrashentry(self):
         def i():
             __tracebackhide__ = True
             raise ValueError
+
         def h():
             i()
+
         def g():
             __tracebackhide__ = True
             h()
+
         def f():
             g()
 
@@ -221,6 +242,7 @@ class TestTraceback_f_g_h:
         def g():
             __tracebackhide__ = True
             raise ValueError
+
         def f():
             __tracebackhide__ = True
             g()
@@ -233,8 +255,10 @@ class TestTraceback_f_g_h:
         assert entry.lineno == co.firstlineno + 2
         assert entry.frame.code.name == 'g'
 
+
 def hello(x):
     x + 5
+
 
 def test_tbentry_reinterpret():
     try:
@@ -245,6 +269,7 @@ def test_tbentry_reinterpret():
     msg = tbentry.reinterpret()
     assert msg.startswith("TypeError: ('hello' + 5)")
 
+
 def test_excinfo_exconly():
     excinfo = py.test.raises(ValueError, h)
     assert excinfo.exconly().startswith('ValueError')
@@ -254,10 +279,12 @@ def test_excinfo_exconly():
     assert msg.startswith('ValueError')
     assert msg.endswith("world")
 
+
 def test_excinfo_repr():
     excinfo = py.test.raises(ValueError, h)
     s = repr(excinfo)
     assert s == "<ExceptionInfo ValueError tblen=4>"
+
 
 def test_excinfo_str():
     excinfo = py.test.raises(ValueError, h)
@@ -266,9 +293,11 @@ def test_excinfo_str():
     assert s.endswith("ValueError")
     assert len(s.split(":")) >= 3 # on windows it's 4
 
+
 def test_excinfo_errisinstance():
     excinfo = py.test.raises(ValueError, h)
     assert excinfo.errisinstance(ValueError)
+
 
 def test_excinfo_no_sourcecode():
     try:
@@ -276,10 +305,8 @@ def test_excinfo_no_sourcecode():
     except ValueError:
         excinfo = py.code.ExceptionInfo()
     s = str(excinfo.traceback[-1])
-    if py.std.sys.version_info < (2,5):
-        assert s == "  File '<string>':1 in ?\n  ???\n"
-    else:
-        assert s == "  File '<string>':1 in <module>\n  ???\n"
+    assert s == "  File '<string>':1 in <module>\n  ???\n"
+
 
 def test_excinfo_no_python_sourcecode(tmpdir):
     #XXX: simplified locally testable version
@@ -292,7 +319,7 @@ def test_excinfo_no_python_sourcecode(tmpdir):
     excinfo = py.test.raises(ValueError,
                              template.render, h=h)
     for item in excinfo.traceback:
-        print(item) #XXX: for some reason jinja.Template.render is printed in full
+        print(item) # XXX: for some reason jinja.Template.render is printed in full
         item.source # shouldnt fail
         if item.path.basename == 'test.txt':
             assert str(item.source) == '{{ h()}}:'
@@ -309,6 +336,7 @@ def test_entrysource_Queue_example():
     s = str(source).strip()
     assert s.startswith("def get")
 
+
 def test_codepath_Queue_example():
     try:
         queue.Queue().get(timeout=0.001)
@@ -319,6 +347,7 @@ def test_codepath_Queue_example():
     assert isinstance(path, py.path.local)
     assert path.basename.lower() == "queue.py"
     assert path.check()
+
 
 class TestFormattedExcinfo:
     def pytest_funcarg__importasmod(self, request):
@@ -355,6 +384,7 @@ class TestFormattedExcinfo:
         assert lines[0] == "|   def f(x):"
         assert lines[1] == "        pass"
 
+    @broken_on_modern_pytest
     def test_repr_source_excinfo(self):
         """ check if indentation is right """
         pr = FormattedExcinfo()
@@ -371,7 +401,6 @@ class TestFormattedExcinfo:
             '>       assert 0',
             'E       assert 0'
         ]
-
 
     def test_repr_source_not_existing(self):
         pr = FormattedExcinfo()
@@ -600,7 +629,10 @@ raise ValueError()
             def entry():
                 func1()
         """)
-        excinfo = py.test.raises(ValueError, mod.entry)
+        try:
+            mod.entry()
+        except ValueError:
+            excinfo = py.code.ExceptionInfo()
         from py._code.code import Code
         monkeypatch.setattr(Code, 'path', 'bogus')
         excinfo.traceback[0].frame.code.path = "bogus"
@@ -650,10 +682,11 @@ raise ValueError()
         p = FormattedExcinfo()
         def raiseos():
             raise OSError(2)
-        monkeypatch.setattr(py.std.os, 'getcwd', raiseos)
+        monkeypatch.setattr('os.getcwd', raiseos)
         assert p._makepath(__file__) == __file__
         reprtb = p.repr_traceback(excinfo)
 
+    @broken_on_modern_pytest
     def test_repr_excinfo_addouterr(self, importasmod):
         mod = importasmod("""
             def entry():
@@ -696,6 +729,7 @@ raise ValueError()
             assert reprtb.extraline == "!!! Recursion detected (same locals & position)"
             assert str(reprtb)
 
+    @broken_on_modern_pytest
     def test_tb_entry_AssertionError(self, importasmod):
         # probably this test is a bit redundant
         # as py/magic/testing/test_assertion.py
@@ -720,7 +754,10 @@ raise ValueError()
             def entry():
                 f(0)
         """)
-        excinfo = py.test.raises(ValueError, mod.entry)
+        try:
+            mod.entry()
+        except ValueError:
+            excinfo = py.code.ExceptionInfo()
 
         for style in ("short", "long", "no"):
             for showlocals in (True, False):
@@ -736,6 +773,7 @@ raise ValueError()
         x = py.builtin._totext(MyRepr())
         assert x == py.builtin._totext("я", "utf-8")
 
+    @broken_on_modern_pytest
     def test_toterminal_long(self, importasmod):
         mod = importasmod("""
             def g(x):
@@ -762,6 +800,7 @@ raise ValueError()
         assert tw.lines[9] == ""
         assert tw.lines[10].endswith("mod.py:3: ValueError")
 
+    @broken_on_modern_pytest
     def test_toterminal_long_missing_source(self, importasmod, tmpdir):
         mod = importasmod("""
             def g(x):
@@ -787,6 +826,7 @@ raise ValueError()
         assert tw.lines[7] == ""
         assert tw.lines[8].endswith("mod.py:3: ValueError")
 
+    @broken_on_modern_pytest
     def test_toterminal_long_incomplete_source(self, importasmod, tmpdir):
         mod = importasmod("""
             def g(x):
@@ -812,6 +852,7 @@ raise ValueError()
         assert tw.lines[7] == ""
         assert tw.lines[8].endswith("mod.py:3: ValueError")
 
+    @broken_on_modern_pytest
     def test_toterminal_long_filenames(self, importasmod):
         mod = importasmod("""
             def f():
@@ -836,14 +877,16 @@ raise ValueError()
         finally:
             old.chdir()
 
-    @py.test.mark.multi(reproptions=[
-        {'style': style, 'showlocals': showlocals,
-         'funcargs': funcargs, 'tbfilter': tbfilter
-        } for style in ("long", "short", "no")
-            for showlocals in (True, False)
-                for tbfilter in (True, False)
-                    for funcargs in (True, False)])
-    def test_format_excinfo(self, importasmod, reproptions):
+    @pytest.mark.parametrize('style', ("long", "short", "no"))
+    @pytest.mark.parametrize('showlocals', (True, False),
+                             ids=['locals', 'nolocals'])
+    @pytest.mark.parametrize('tbfilter', (True, False),
+                             ids=['tbfilter', 'nofilter'])
+    @pytest.mark.parametrize('funcargs', (True, False),
+                             ids=['funcargs', 'nofuncargs'])
+    def test_format_excinfo(self, importasmod,
+                            style, showlocals, tbfilter, funcargs):
+        
         mod = importasmod("""
             def g(x):
                 raise ValueError(x)
@@ -852,11 +895,16 @@ raise ValueError()
         """)
         excinfo = py.test.raises(ValueError, mod.f)
         tw = py.io.TerminalWriter(stringio=True)
-        repr = excinfo.getrepr(**reproptions)
+        repr = excinfo.getrepr(
+            style=style,
+            showlocals=showlocals,
+            funcargs=funcargs,
+            tbfilter=tbfilter
+        )
         repr.toterminal(tw)
         assert tw.stringio.getvalue()
 
-
+    @broken_on_modern_pytest
     def test_native_style(self):
         excinfo = self.excinfo_from_exec("""
             assert 0
@@ -867,10 +915,9 @@ raise ValueError()
         assert s.startswith('Traceback (most recent call last):\n  File')
         assert s.endswith('\nAssertionError: assert 0')
         assert 'exec (source.compile())' in s
-        # python 2.4 fails to get the source line for the assert
-        if py.std.sys.version_info >= (2, 5):
-            assert s.count('assert 0') == 2
+        assert s.count('assert 0') == 2
 
+    @broken_on_modern_pytest
     def test_traceback_repr_style(self, importasmod):
         mod = importasmod("""
             def f():
