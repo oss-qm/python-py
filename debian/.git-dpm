@@ -1,0 +1,11 @@
+# see git-dpm(1) from git-dpm package
+105c1b8e47a2075a4801fb47cf663a59577382dc
+105c1b8e47a2075a4801fb47cf663a59577382dc
+105c1b8e47a2075a4801fb47cf663a59577382dc
+105c1b8e47a2075a4801fb47cf663a59577382dc
+python-py_1.5.4.orig.tar.gz
+4285f5f1234a939bfc828ed41ff34008d2c89197
+201448
+debianTag="debian/%e%v"
+patchedTag="patched/%e%v"
+upstreamTag="upstream/%e%u"

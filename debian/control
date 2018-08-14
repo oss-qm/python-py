@@ -1,0 +1,81 @@
+Source: python-py
+Section: python
+Priority: optional
+Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
+Uploaders: Ondřej Nový <onovy@debian.org>
+Build-Depends:
+ debhelper (>= 11),
+ dh-python,
+ pypy,
+ pypy-setuptools,
+ pypy-setuptools-scm,
+ python-all,
+ python3-all,
+ python-setuptools,
+ python3-setuptools,
+ python-setuptools-scm,
+ python3-setuptools-scm,
+ pypy-pytest <!nocheck>,
+ python-pytest <!nocheck>,
+ python3-pytest <!nocheck>,
+ subversion <!nocheck>,
+Standards-Version: 4.1.5
+Homepage: https://github.com/pytest-dev/py
+Vcs-Git: https://salsa.debian.org/python-team/modules/python-py.git
+Vcs-Browser: https://salsa.debian.org/python-team/modules/python-py
+Testsuite: autopkgtest-pkg-python
+
+Package: python3-py
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ python3-pkg-resources
+Suggests:
+ subversion,
+ python3-pytest
+Description: Advanced Python development support library (Python 3)
+ The Codespeak py lib aims at supporting a decent Python development process
+ addressing deployment, versioning and documentation perspectives. It includes:
+ .
+  * py.path: path abstractions over local and Subversion files
+  * py.code: dynamic code compile and traceback printing support
+ .
+ This package provides the Python 3 modules.
+
+Package: python-py
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ python-pkg-resources
+Suggests:
+ subversion,
+ python-pytest,
+ python-pytest-xdist
+Description: Advanced Python development support library (Python 2)
+ The Codespeak py lib aims at supporting a decent Python development process
+ addressing deployment, versioning and documentation perspectives. It includes:
+ .
+  * py.path: path abstractions over local and Subversion files
+  * py.code: dynamic code compile and traceback printing support
+ .
+ This package provides the Python 2 modules.
+
+Package: pypy-py
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${pypy:Depends},
+ pypy-pkg-resources
+Suggests:
+ subversion,
+ pypy-pytest
+Description: Advanced Python development support library (PyPy)
+ The Codespeak py lib aims at supporting a decent Python development process
+ addressing deployment, versioning and documentation perspectives. It includes:
+ .
+  * py.path: path abstractions over local and Subversion files
+  * py.code: dynamic code compile and traceback printing support
+ .
+ This package provides the PyPy 2 modules.

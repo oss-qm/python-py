@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=py
+
+%:
+	dh $@ --with python2,python3,pypy --buildsystem=pybuild
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	PYBUILD_SYSTEM=custom \
+		PYBUILD_TEST_ARGS="{interpreter} -m pytest testing -k-testing/log/test_warning.py" \
+		PYBUILD_TEST_ARGS_pypy="echo Skip PyPy: testing/code/test_source.py test_commands test fails" \
+		LC_ALL=C.UTF-8 \
+		dh_auto_test
+endif
+
+override_dh_installchangelogs:
+	dh_installchangelogs CHANGELOG
