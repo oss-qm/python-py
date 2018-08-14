@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
 Uploaders: Ondřej Nový <onovy@debian.org>
 Build-Depends:
- debhelper (>= 11),
+ debhelper (>= 9),
  dh-python,
  pypy,
  pypy-setuptools,
